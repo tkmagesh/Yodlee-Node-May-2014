@@ -1,7 +1,7 @@
 var express = require("express"),
 	router = express.Router();
 
-var tasks = ['Task - 1','Task - 2', 'Task -3'];
+var tasks = [];
 router.get('/',function(req,res){
 	res.render('tasks', {list : tasks} );
 });

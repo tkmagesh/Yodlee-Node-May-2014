@@ -2,16 +2,15 @@ var http = require("http"),
 	fs = require("fs"),
 	url = require("url"),
 	path = require("path"),
-	Calculator = require("./Calculator");
+	qs = require("querystring");
+	
 
 String.prototype.endsWith = function(suffix) {
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };
-var calculator = new Calculator();
+var tasks = [];
 
 var server = http.createServer(function(req,res){
-	//console.log(req);
-	//res.end();
 	if (!serveStatic(req,res)){
 		console.log('dynamic');
 		var reqData = '';
@@ -19,26 +18,32 @@ var server = http.createServer(function(req,res){
 			reqData += data;
 		});
 		req.on('end',function(){
-			console.log(reqData);
-			res.write(reqData);
-			res.end();
+			reqObj = qs.parse(reqData);
+			tasks.push(reqObj.taskName);
+			serveDynamic("TaskManager2.html",{taskCount : tasks.length},res);
 		});
-		/*
-		var urlObj = url.parse(req.url,true);
-		var resource = urlObj.pathname,
-			query = urlObj.query,
-			number = parseInt(query.no,10),
-			operation = query.op;
-
-		calculator[operation](number);
-		res.write(calculator.result.toString());
-		res.end();*/
-		
 	}
 });
 server.listen(9090);
 console.log("Yodlee server running on port 9090...!!");
 
+function serveDynamic(filePath,data,res){
+	fs.readFile(filePath, {encoding : "utf8"},function(err,fileContents){
+		if (err){
+			res.statusCode = 500;
+			res.end();
+			return;
+		} 
+		for(var key in data){
+			var search = new RegExp("{" + key + "}","g");
+			var replace = data[key].toString();
+			fileContents = fileContents.replace(search,replace);
+		}
+		res.write(fileContents);
+		res.end();
+
+	});
+}
 
 function serveStatic(req,res){
 	function isStaticResource(urlString){
